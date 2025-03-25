@@ -14,3 +14,4 @@ print("Waiting for messages...")
 # Consume messages from the "test" topic
 for message in consumer:
     print(f"Received: {message.value}")
+
