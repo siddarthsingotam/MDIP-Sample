@@ -10,6 +10,7 @@ def hr_data():
     return {
         "HR_data": {
             "rrData": [384],
+            "Pico_ID": "qwdce_324",
             "Movesense_series": "174630000192",
             "Timestamp_UTC": int(time.time()),
             "average_bpm": 108.7813
@@ -113,6 +114,7 @@ class SensorPublisher:
             hr = hr_data()
             self.mqtt_client.publish(self.topic_hr, json.dumps(hr))
             print(f"Published HR data to {self.topic_hr}")
+            print(f"The publish time for HR is:  {time.time()}")
 
             # Publish ECG data
             ecg = ecg_data()
