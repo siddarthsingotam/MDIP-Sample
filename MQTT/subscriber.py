@@ -19,7 +19,14 @@ if not token:
 org = "MDIP-Sample"
 host = "https://eu-central-1-1.aws.cloud2.influxdata.com"
 database = "Ice_Hockey_Metrics"
+
 measurement = "player_metrics"
+
+measurement_hr = "measurement_heart_rate"
+measurement_ecg = "measurement_ecg"
+measurement_imu = "measurement_imu"
+measurement_gnss = "measurement_gnss"
+
 
 # Initialize InfluxDB client
 influx_client = InfluxDBClient3(host=host, token=token, org=org)
@@ -72,7 +79,8 @@ class MQTTSubscriber:
             # Process the message based on the topic
             if msg.topic == "sensors/all":
                 # Handle combined data from all sensors
-                self.process_all_data(payload)
+                # self.process_all_data(payload)
+                pass
             elif msg.topic == "sensors/heart_rate":
                 # Handle heart rate data
                 self.process_hr_data(payload.get("HR_data", {}))
@@ -89,24 +97,24 @@ class MQTTSubscriber:
         except Exception as e:
             print(f"Error processing message: {e}")
 
-    def process_all_data(self, data):
-        """Process data from all sensors"""
-        try:
-            # Process each data type if it exists in the payload
-            if "HR_data" in data:
-                self.process_hr_data(data["HR_data"])
-
-            if "ECG_data" in data:
-                self.process_ecg_data(data["ECG_data"])
-
-            if "IMU9_data" in data:
-                self.process_imu_data(data["IMU9_data"])
-
-            if "GNSS_data" in data:
-                self.process_gnss_data(data["GNSS_data"])
-
-        except Exception as e:
-            print(f"Error processing all data: {e}")
+    # def process_all_data(self, data):
+    #     """Process data from all sensors"""
+    #     try:
+    #         # Process each data type if it exists in the payload
+    #         if "HR_data" in data:
+    #             self.process_hr_data(data["HR_data"])
+    #
+    #         if "ECG_data" in data:
+    #             self.process_ecg_data(data["ECG_data"])
+    #
+    #         if "IMU9_data" in data:
+    #             self.process_imu_data(data["IMU9_data"])
+    #
+    #         if "GNSS_data" in data:
+    #             self.process_gnss_data(data["GNSS_data"])
+    #
+    #     except Exception as e:
+    #         print(f"Error processing all data: {e}")
 
     def process_hr_data(self, hr_data):
         """Process and store heart rate data in InfluxDB"""
@@ -122,7 +130,7 @@ class MQTTSubscriber:
 
             # Create point for InfluxDB
             point = (
-                Point(measurement)
+                Point(measurement_hr)
                 .tag("Movesense_series", hr_data.get("Movesense_series", "unknown"))
                 .field("rrData", serialized_rrData)
                 .field("Timestamp_UTC", hr_data.get("Timestamp_UTC", int(time.time())))
@@ -150,7 +158,7 @@ class MQTTSubscriber:
 
             # Create point for InfluxDB
             point = (
-                Point(measurement)
+                Point(measurement_ecg)
                 .tag("Movesense_series", ecg_data.get("Movesense_series", "unknown"))
                 .field("Samples", serialized_samples)
                 .field("Timestamp_UTC", ecg_data.get("Timestamp_UTC", int(time.time())))
@@ -173,46 +181,67 @@ class MQTTSubscriber:
 
             print(f"Processing IMU data")
 
-            # Process accelerometer data
-            for i, acc in enumerate(imu_data.get("ArrayAcc", [])):
-                point = (
-                    Point(measurement)
-                    .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
-                    .field(f"Acc_x_{i}", acc.get("x", 0))
-                    .field(f"Acc_y_{i}", acc.get("y", 0))
-                    .field(f"Acc_z_{i}", acc.get("z", 0))
-                    .field("Timestamp_UTC", imu_data.get("Timestamp_UTC", int(time.time())))
-                    .field("Timestamp_ms", imu_data.get("Timestamp_ms", 0))
-                )
-                influx_client.write(database=database, record=point)
+            # # Process accelerometer data
+            # for i, acc in enumerate(imu_data.get("ArrayAcc", [])):
+            #     point = (
+            #         Point(measurement)
+            #         .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
+            #         .field(f"Acc_x_{i}", acc.get("x", 0))
+            #         .field(f"Acc_y_{i}", acc.get("y", 0))
+            #         .field(f"Acc_z_{i}", acc.get("z", 0))
+            #         .field("Timestamp_UTC", imu_data.get("Timestamp_UTC", int(time.time())))
+            #         .field("Timestamp_ms", imu_data.get("Timestamp_ms", 0))
+            #     )
+            #     influx_client.write(database=database, record=point)
+            #
+            # # Process gyroscope data
+            # for i, gyro in enumerate(imu_data.get("ArrayGyro", [])):
+            #     point = (
+            #         Point(measurement)
+            #         .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
+            #         .field(f"Gyro_x_{i}", gyro.get("x", 0))
+            #         .field(f"Gyro_y_{i}", gyro.get("y", 0))
+            #         .field(f"Gyro_z_{i}", gyro.get("z", 0))
+            #         .field("Timestamp_UTC", imu_data.get("Timestamp_UTC", int(time.time())))
+            #         .field("Timestamp_ms", imu_data.get("Timestamp_ms", 0))
+            #     )
+            #     influx_client.write(database=database, record=point)
+            #
+            # # Process magnetometer data
+            # for i, magn in enumerate(imu_data.get("ArrayMagn", [])):
+            #     point = (
+            #         Point(measurement)
+            #         .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
+            #         .field(f"Magn_x_{i}", magn.get("x", 0))
+            #         .field(f"Magn_y_{i}", magn.get("y", 0))
+            #         .field(f"Magn_z_{i}", magn.get("z", 0))
+            #         .field("Timestamp_UTC", imu_data.get("Timestamp_UTC", int(time.time())))
+            #         .field("Timestamp_ms", imu_data.get("Timestamp_ms", 0))
+            #     )
+            #     influx_client.write(database=database, record=point)
+            #
+            # print("IMU data stored in InfluxDB")
 
-            # Process gyroscope data
-            for i, gyro in enumerate(imu_data.get("ArrayGyro", [])):
-                point = (
-                    Point(measurement)
-                    .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
-                    .field(f"Gyro_x_{i}", gyro.get("x", 0))
-                    .field(f"Gyro_y_{i}", gyro.get("y", 0))
-                    .field(f"Gyro_z_{i}", gyro.get("z", 0))
-                    .field("Timestamp_UTC", imu_data.get("Timestamp_UTC", int(time.time())))
-                    .field("Timestamp_ms", imu_data.get("Timestamp_ms", 0))
-                )
-                influx_client.write(database=database, record=point)
+            # Format imu arrays as JSON
 
-            # Process magnetometer data
-            for i, magn in enumerate(imu_data.get("ArrayMagn", [])):
-                point = (
-                    Point(measurement)
-                    .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
-                    .field(f"Magn_x_{i}", magn.get("x", 0))
-                    .field(f"Magn_y_{i}", magn.get("y", 0))
-                    .field(f"Magn_z_{i}", magn.get("z", 0))
-                    .field("Timestamp_UTC", imu_data.get("Timestamp_UTC", int(time.time())))
-                    .field("Timestamp_ms", imu_data.get("Timestamp_ms", 0))
-                )
-                influx_client.write(database=database, record=point)
+            serialized_acc = json.dumps(imu_data.get("ArrayAcc", []))
+            serialized_gyro = json.dumps(imu_data.get("ArrayGyro", []))
+            serialized_magn = json.dumps(imu_data.get("ArrayMagn", []))
 
-            print("IMU data stored in InfluxDB")
+            # Create a single point for all the IMU data
+            point = (
+                Point(measurement_imu)
+                .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
+                .field("ArrayAcc", serialized_acc)
+                .field("ArrayGyro", serialized_gyro)
+                .field("ArrayMagn", serialized_magn)
+                .field("Timestamp_UTC", imu_data.get("Timestamp_UTC", int(time.time())))
+                .field("Timestamp_ms", imu_data.get("Timestamp_ms", 0))
+            )
+
+            # Write to InfluxDB
+            influx_client.write(database=database, record=point)
+            print("IMU data stored in Influx")
 
         except Exception as e:
             print(f"Error processing IMU data: {e}")
@@ -228,7 +257,7 @@ class MQTTSubscriber:
 
             # Create point for InfluxDB
             point = (
-                Point(measurement)
+                Point(measurement_gnss)
                 .tag("GNSS_sensor_ID", gnss_data.get("GNSS_sensor_ID", "unknown"))
                 .field("Latitude", gnss_data.get("Latitude", 0))
                 .field("Longitude", gnss_data.get("Longitude", 0))
