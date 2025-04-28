@@ -107,34 +107,26 @@ class SensorPublisher:
         else:
             print(f"Failed to connect to MQTT broker with code {rc}")
 
+    def get_time_ms(self):
+        return time.time_ns() // 1_000_000
+
+    def publish_handler(self, method, topic):
+        """A handler (child method) that takes a method and a topic and publishes it"""
+        # A variable for publish time ms
+        publish_time_ms = "publish_time_ms"
+        x = method
+        x[publish_time_ms] = self.get_time_ms()
+        self.mqtt_client.publish(topic, json.dumps(x))
+        print(f"Published {topic} at {x[publish_time_ms]}")
+
     def publish_data(self):
         """Publish sensor data to MQTT broker"""
         try:
-            # Publish heart rate data
-            hr = hr_data()
-            self.mqtt_client.publish(self.topic_hr, json.dumps(hr))
-            print(f"Published HR data to {self.topic_hr}")
-            print(f"The publish time for HR is:  {time.time()}")
-
-            # Publish ECG data
-            ecg = ecg_data()
-            self.mqtt_client.publish(self.topic_ecg, json.dumps(ecg))
-            print(f"Published ECG data to {self.topic_ecg}")
-
-            # Publish IMU data
-            imu = imu9_data()
-            self.mqtt_client.publish(self.topic_imu, json.dumps(imu))
-            print(f"Published IMU data to {self.topic_imu}")
-
-            # Publish GNSS data
-            gnss = gnss_data()
-            self.mqtt_client.publish(self.topic_gnss, json.dumps(gnss))
-            print(f"Published GNSS data to {self.topic_gnss}")
-
-            # Publish data from all the sensors
-            all_d = all_data()
-            self.mqtt_client.publish(self.topic_all, json.dumps(all_d))
-            print(f"Published ALL data to {self.topic_all}")
+            # Publish handler
+            self.publish_handler(hr_data(), self.topic_hr)
+            self.publish_handler(ecg_data(), self.topic_ecg)
+            self.publish_handler(imu9_data(), self.topic_imu)
+            self.publish_handler(gnss_data(), self.topic_gnss)
 
         except Exception as e:
             print(f"Error publishing data: {e}")
@@ -152,6 +144,7 @@ class SensorPublisher:
 
             # Publish data periodically
             while True:
+                print(100 * "-")
                 self.publish_data()
                 time.sleep(5)  # Publish every 5 seconds
 
@@ -169,4 +162,3 @@ class SensorPublisher:
 if __name__ == "__main__":
     publisher = SensorPublisher()
     publisher.start()
-    # print(all_data())
