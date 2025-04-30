@@ -1,17 +1,22 @@
 from db_manager import DatabaseManager
 from player import Player
+from MQTT.publisher import hr_data
 
-# Simple test of the database manager if run directly
+
 if __name__ == "__main__":
     # Create an instance of the database manager
     db_manager = DatabaseManager()
 
-    player1 = Player("Niklas", "pico_id123", db_manager)
-    player2 = Player("Bob", "pico_id67868", db_manager)
-    player3 = Player("Anton", "pico_id4564598", db_manager)
+    # Get Pico_ID from hr_data in MQTT.publisher file
+    data = hr_data()
+    pico_id = data["HR_data"]["Pico_ID"]
+
+    # players.name instead of string name when names are coming from the frontend
+    player = Player("Merlin", pico_id, db_manager)
+
 
     # Load player from database
-    loaded_player = Player.load_from_db(player2.player_id, db_manager)
+    loaded_player = Player.load_from_db(player.player_id, db_manager)
     print(loaded_player)
 
     # Get all players
