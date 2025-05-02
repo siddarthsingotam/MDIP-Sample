@@ -1,5 +1,4 @@
 import sqlite3
-import os
 
 # A class to manage SQLite database operations for the Player class.
 class DatabaseManager:
