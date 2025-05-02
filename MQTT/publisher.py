@@ -116,7 +116,8 @@ class SensorPublisher:
         return time.time_ns() // 1_000_000
 
     def publish_handler(self, method, topic):
-        """A handler (child method) that takes a method and a topic and publishes it"""
+        """A handler (child method) that takes a method and a topic and publishes it along with a timestamp of
+         publishing in milliseconds"""
         # A variable for publish time ms
         publish_time_ms = "publish_time_ms"
         x = method
