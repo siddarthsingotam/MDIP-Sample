@@ -6,11 +6,13 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 
 
+PICO_ID = "qwert_1234"
+
 def hr_data():
     return {
         "HR_data": {
             "rrData": [384],
-            "Pico_ID": "qwdce_324",
+            "Pico_ID": PICO_ID,
             "Movesense_series": "174630000192",
             "Timestamp_UTC": int(time.time()),
             "average_bpm": 108.7813
@@ -21,6 +23,7 @@ def hr_data():
 def ecg_data():
     return {
         "ECG_data": {
+            "Pico_ID": PICO_ID,
             "Samples": [-62342, -51680, -43311, -35942, -29149, -23343, -18437, -14248, -10712, -7628, -4838, -2323,
                         -90, 1953, 3926, 5939],
             "Movesense_series": "174630000192",
@@ -33,6 +36,7 @@ def ecg_data():
 def imu9_data():
     return {
         "IMU9_data": {
+            "Pico_ID": PICO_ID,
             "Movesense_series": "174630000192",
             "Timestamp_UTC": int(time.time()),
             "Timestamp_ms": 30348,
@@ -61,6 +65,7 @@ def imu9_data():
 def gnss_data():
     return {
         "GNSS_data": {
+            "Pico_ID": PICO_ID,
             "GNSS_sensor_ID": "device123",
             "Date": datetime.now().isoformat(),
             "Latitude": 37.7749 + random.uniform(-0.01, 0.01),
