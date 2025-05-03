@@ -5,73 +5,66 @@ import random
 from datetime import datetime
 import paho.mqtt.client as mqtt
 
-
 PICO_ID = "qwert_1234"
+
 
 def hr_data():
     return {
-        "HR_data": {
-            "rrData": [384],
-            "Pico_ID": PICO_ID,
-            "Movesense_series": "174630000192",
-            "Timestamp_UTC": int(time.time()),
-            "average_bpm": 108.7813
-        }
+        "rrData": [384],
+        "Pico_ID": PICO_ID,
+        "Movesense_series": "174630000192",
+        "Timestamp_UTC": int(time.time()),
+        "average_bpm": 108.7813
     }
 
 
 def ecg_data():
     return {
-        "ECG_data": {
-            "Pico_ID": PICO_ID,
-            "Samples": [-62342, -51680, -43311, -35942, -29149, -23343, -18437, -14248, -10712, -7628, -4838, -2323,
-                        -90, 1953, 3926, 5939],
-            "Movesense_series": "174630000192",
-            "Timestamp_UTC": int(time.time()),
-            "Timestamp_ms": 29889
-        }
+        "Pico_ID": PICO_ID,
+        "Samples": [-62342, -51680, -43311, -35942, -29149, -23343, -18437, -14248, -10712, -7628, -4838, -2323,
+                    -90, 1953, 3926, 5939],
+        "Movesense_series": "174630000192",
+        "Timestamp_UTC": int(time.time()),
+        "Timestamp_ms": 29889
     }
 
 
 def imu9_data():
     return {
-        "IMU9_data": {
-            "Pico_ID": PICO_ID,
-            "Movesense_series": "174630000192",
-            "Timestamp_UTC": int(time.time()),
-            "Timestamp_ms": 30348,
-            "ArrayAcc": [
-                {"x": 8.198, "y": -5.47, "z": 1.235},
-                {"x": 8.279, "y": -5.37, "z": 1.278},
-                {"x": 8.126, "y": -5.296, "z": 1.251},
-                {"x": 7.935, "y": -5.202, "z": 1.232}
-            ],
-            "ArrayGyro": [
-                {"x": 2.8, "y": 6.3, "z": 5.6},
-                {"x": 0.56, "y": 9.52, "z": 8.82},
-                {"x": -1.75, "y": 7.0, "z": 11.2},
-                {"x": 1.68, "y": -0.63, "z": 11.06}
-            ],
-            "ArrayMagn": [
-                {"x": 42.6, "y": -28.5, "z": 3.45},
-                {"x": 44.1, "y": -27.45, "z": 5.7},
-                {"x": 43.35, "y": -28.2, "z": 4.05},
-                {"x": 43.2, "y": -25.05, "z": 3.3}
-            ]
-        }
+        "Pico_ID": PICO_ID,
+        "Movesense_series": "174630000192",
+        "Timestamp_UTC": int(time.time()),
+        "Timestamp_ms": 30348,
+        "ArrayAcc": [
+            {"x": 8.198, "y": -5.47, "z": 1.235},
+            {"x": 8.279, "y": -5.37, "z": 1.278},
+            {"x": 8.126, "y": -5.296, "z": 1.251},
+            {"x": 7.935, "y": -5.202, "z": 1.232}
+        ],
+        "ArrayGyro": [
+            {"x": 2.8, "y": 6.3, "z": 5.6},
+            {"x": 0.56, "y": 9.52, "z": 8.82},
+            {"x": -1.75, "y": 7.0, "z": 11.2},
+            {"x": 1.68, "y": -0.63, "z": 11.06}
+        ],
+        "ArrayMagn": [
+            {"x": 42.6, "y": -28.5, "z": 3.45},
+            {"x": 44.1, "y": -27.45, "z": 5.7},
+            {"x": 43.35, "y": -28.2, "z": 4.05},
+            {"x": 43.2, "y": -25.05, "z": 3.3}
+        ]
     }
 
 
 def gnss_data():
     return {
-        "GNSS_data": {
-            "Pico_ID": PICO_ID,
-            "GNSS_sensor_ID": "device123",
-            "Date": datetime.now().isoformat(),
-            "Latitude": 37.7749 + random.uniform(-0.01, 0.01),
-            "Longitude": -122.4194 + random.uniform(-0.01, 0.01)
-        }
+        "Pico_ID": PICO_ID,
+        "GNSS_sensor_ID": "device123",
+        "Date": datetime.now().isoformat(),
+        "Latitude": 37.7749 + random.uniform(-0.01, 0.01),
+        "Longitude": -122.4194 + random.uniform(-0.01, 0.01)
     }
+
 
 def all_data():
     return {
@@ -87,7 +80,7 @@ class SensorPublisher:
         # MQTT Configuration
         self.mqtt_broker = "d4e877f7c282469c87fe4307599ad40c.s1.eu.hivemq.cloud"  # e.g., broker.hivemq.cloud
         self.mqtt_port = 8883  # TLS port
-        self.mqtt_username = "AtomBerg1" # SAMPLE USERNAME
+        self.mqtt_username = "AtomBerg1"  # SAMPLE USERNAME
         self.mqtt_password = "AtomBerg1"
         self.mqtt_client_id = f"sensor-publisher-XXXX"
 
@@ -123,6 +116,8 @@ class SensorPublisher:
         x[publish_time_ms] = self.get_time_ms()
         self.mqtt_client.publish(topic, json.dumps(x))
         print(f"Published {topic} at {x[publish_time_ms]}")
+        print(f"{method}")
+        print(100 * "-")
 
     def publish_data(self):
         """Publish sensor data to MQTT broker"""
@@ -149,7 +144,6 @@ class SensorPublisher:
 
             # Publish data periodically
             while True:
-                print(100 * "-")
                 self.publish_data()
                 time.sleep(5)  # Publish every 5 seconds
 

@@ -2,7 +2,6 @@
 import json
 import time
 import os
-from datetime import datetime
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
 from influxdb_client_3 import InfluxDBClient3, Point
@@ -104,49 +103,41 @@ class MQTTSubscriber:
             # Parse JSON payload
             payload = json.loads(msg.payload.decode())
 
-            # Extract time t1 from payload (in milliseconds)
-            t1 = payload.get(t1_payload_key, None)
 
-            # Extract pico_id
+            # Extract pico_id from payload
             pico_id = None
-            if "HR_data" in payload:
-                pico_id = payload["HR_data"].get("Pico_ID")
-            elif "ECG_data" in payload:
-                pico_id = payload["ECG_data"].get("Pico_ID")
-            elif "IMU9_data" in payload:
-                pico_id = payload["IMU9_data"].get("Pico_ID")
-            elif "GNSS_data" in payload:
-                pico_id = payload["GNSS_data"].get("Pico_ID")
+            if "Pico_ID" in payload:
+                pico_id = payload.get("Pico_ID")
 
             if pico_id:
                 print(f"Extracted Pico_ID: {pico_id}")
             else:
                 print("Pico_ID not found in the payload")
 
-            # Checking for latency
-
-            if t1:
+            try:
+                # Extract time t1 from payload (in milliseconds)
+                t1 = payload.get(t1_payload_key, None)
                 # Now recording current time t2 (in milliseconds as well)
                 t2 = time.time_ns() // 1_000_000
-
                 # Now calculate latency
                 latency = t2 - t1
                 print(f"Latency for Pico: {pico_id}, on topic {msg.topic}: {latency} ms")
+            except NotImplementedError:
+                pass
 
             # Process the message based on the topic
-
             if msg.topic == "sensors/hr":
                 # Handle heart rate data
-                self.process_hr_data(payload.get("HR_data", {}), pico_id)
+                self.process_hr_data(payload, pico_id)
             elif msg.topic == "sensors/ecg":
                 # Handle ECG data
-                self.process_ecg_data(payload.get("ECG_data", {}), pico_id)
+                self.process_ecg_data(payload, pico_id)
             elif msg.topic == "sensors/imu":
                 # Handle IMU data
-                self.process_imu_data(payload.get("IMU9_data", {}), pico_id)
+                self.process_imu_data(payload, pico_id)
             elif msg.topic == "sensors/gnss":
                 # Handle GNSS data
-                self.process_gnss_data(payload.get("GNSS_data", {}), pico_id)
+                self.process_gnss_data(payload, pico_id)
 
         except Exception as e:
             print(f"Error processing message: {e}")
@@ -179,7 +170,6 @@ class MQTTSubscriber:
                 .field("average_bpm", hr_data.get("average_bpm", 0))
             )
 
-            print(f"Player Data: {player_data}")
             print(f"Processing HR data: {hr_data}")
             # Write to InfluxDB
             influx_client.write(database=database, record=point)
