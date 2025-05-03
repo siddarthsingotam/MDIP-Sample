@@ -7,6 +7,8 @@ import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
 from influxdb_client_3 import InfluxDBClient3, Point
 
+from playerData.db_manager import DatabaseManager
+
 # Load environment variables for InfluxDB credentials
 KEY_PATH = r"..\keys\keys.env"
 load_dotenv(KEY_PATH)
@@ -18,9 +20,9 @@ if not token:
 # InfluxDB Configuration
 org = "MDIP-Sample"
 host = "https://eu-central-1-1.aws.cloud2.influxdata.com"
-database = "Ice_Hockey_Metrics"
+database = "Full_Player_Data"
 
-measurement = "player_metrics"
+# measurement = "player_metrics"
 
 measurement_hr = "measurement_heart_rate"
 measurement_ecg = "measurement_ecg"
@@ -28,9 +30,22 @@ measurement_imu = "measurement_imu"
 measurement_gnss = "measurement_gnss"
 t1_payload_key = "publish_time_ms"
 
-
 # Initialize InfluxDB client
 influx_client = InfluxDBClient3(host=host, token=token, org=org)
+
+# if DB.get_player_by_pico_ID:
+
+# Setup Database Manager
+DB = DatabaseManager()
+print(DB.get_player_by_pico_id("qwert_1234"))
+
+
+# A static method to get the pico_id or None from the proposed payload format
+# def get_pico_id_from_payload(payload, types_of_data=("HR_data", "ECG_data", "IMU9_data", "GNSS_data")):
+#     for data_type in types_of_data:
+#         if data_type in payload:
+#             return payload[data_type].get("Pico_ID")
+#     return None
 
 
 class MQTTSubscriber:
@@ -81,18 +96,37 @@ class MQTTSubscriber:
             # Extract time t1 from payload (in milliseconds)
             t1 = payload.get(t1_payload_key, None)
 
+            # Extract pico_id
+            pico_id = None
+            if "HR_data" in payload:
+                pico_id = payload["HR_data"].get("Pico_ID")
+            elif "ECG_data" in payload:
+                pico_id = payload["ECG_data"].get("Pico_ID")
+            elif "IMU9_data" in payload:
+                pico_id = payload["IMU9_data"].get("Pico_ID")
+            elif "GNSS_data" in payload:
+                pico_id = payload["GNSS_data"].get("Pico_ID")
+
+            if pico_id:
+                print(f"Extracted Pico_ID: {pico_id}")
+            else:
+                print("Pico_ID not found in the payload")
+
+            # Checking for latency
+
             if t1:
                 # Now recording current time t2 (in milliseconds as well)
                 t2 = time.time_ns() // 1_000_000
 
                 # Now calculate latency
                 latency = t2 - t1
-                print(f"Latency for topic {msg.topic}: {latency}")
+                print(f"Latency for Pico: {pico_id}, on topic {msg.topic}: {latency} ms")
 
             # Process the message based on the topic
+
             if msg.topic == "sensors/heart_rate":
                 # Handle heart rate data
-                self.process_hr_data(payload.get("HR_data", {}))
+                self.process_hr_data(payload.get("HR_data", {}), pico_id)
             elif msg.topic == "sensors/ecg":
                 # Handle ECG data
                 self.process_ecg_data(payload.get("ECG_data", {}))
@@ -106,7 +140,7 @@ class MQTTSubscriber:
         except Exception as e:
             print(f"Error processing message: {e}")
 
-    def process_hr_data(self, hr_data):
+    def process_hr_data(self, hr_data, pico_id):
         """Process and store heart rate data in InfluxDB"""
         try:
             if not hr_data:
@@ -118,15 +152,24 @@ class MQTTSubscriber:
             # Serialize rrData as JSON
             serialized_rrData = json.dumps({"data": hr_data.get("rrData", [])})
 
+            # Get Pico Information from the DB
+            player_data = DB.get_player_by_pico_id(pico_id=pico_id)
+            print(f"Player data {player_data}")
+
             # Create point for InfluxDB
             point = (
                 Point(measurement_hr)
-                .tag("Movesense_series", hr_data.get("Movesense_series", "unknown"))
+                .tag("Pico_ID", player_data["pico_id"])
+                .tag("Player_ID", player_data["player_id"])
+                .field("Player Name", player_data["name"])
+                .field("Movesense_series", hr_data.get("Movesense_series", "unknown"))
                 .field("rrData", serialized_rrData)
                 .field("Timestamp_UTC", hr_data.get("Timestamp_UTC", int(time.time())))
                 .field("average_bpm", hr_data.get("average_bpm", 0))
             )
 
+            print(f"Player Data: {player_data}")
+            print(f"Processing HR data: {hr_data}")
             # Write to InfluxDB
             influx_client.write(database=database, record=point)
             print("HR data stored in InfluxDB")
