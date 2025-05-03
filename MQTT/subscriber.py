@@ -43,33 +43,43 @@ except NotImplementedError as e:
 
 
 class MQTTSubscriber:
-    def __init__(self):
-        # MQTT Configuration
-        self.mqtt_broker = "d4e877f7c282469c87fe4307599ad40c.s1.eu.hivemq.cloud"
-        self.mqtt_port = 8883  # TLS port
-        self.mqtt_username = "AtomBerg1"  # Update with your username
-        self.mqtt_password = "AtomBerg1"  # Update with your password
-        self.mqtt_client_id = f"sensor-subscriber-XXXX"
-
-        # # Hive MQTT Configuration
-        # self.mqtt_broker = "d4e877f7c282469c87fe4307599ad40c.s1.eu.hivemq.cloud"
-        # self.mqtt_port = 8883  # TLS port
-        # self.mqtt_username = "AtomBerg1"
-        # self.mqtt_password = "AtomBerg1"
-        # self.mqtt_client_id = f"sensor-subscriber-XXXX"
+    def __init__(self, hive_mq=False):
+        """Initiation on connecting default to the own config broker, else hiveMQ on specification"""
+        self.hive_mq = hive_mq
+        if self.hive_mq:
+            # Hive MQTT Configuration
+            self.mqtt_broker = "d4e877f7c282469c87fe4307599ad40c.s1.eu.hivemq.cloud"
+            self.mqtt_port = 8883  # TLS port
+            self.mqtt_username = "AtomBerg1"  # Update with your username
+            self.mqtt_password = "AtomBerg1"  # Update with your password
+            self.mqtt_client_id = f"sensor-subscriber-XXXX"
+        else:
+            # MQTT Configuration on Local
+            self.mqtt_broker = b"51.21.239.39"
+            self.mqtt_port = 1883
+            self.mqtt_username = b"iotuser"
+            self.mqtt_password = b"iotuser2025"
+            self.mqtt_client_id = f"sensor-subscriber-XXXX"
 
         # MQTT Topics to subscribe to
         self.topics = [
-            "sensors/heart_rate",
-            "sensors/ecg",
             "sensors/imu",
+            "sensors/ecg",
+            "sensors/hr",
             "sensors/gnss"
         ]
 
-        # Initialize MQTT client
-        self.mqtt_client = mqtt.Client(client_id=self.mqtt_client_id, protocol=mqtt.MQTTv5)
-        self.mqtt_client.username_pw_set(self.mqtt_username, self.mqtt_password)
-        self.mqtt_client.tls_set()  # Enable TLS for HiveMQ Cloud!!!!
+        try:
+            # Initialize MQTT client
+            self.mqtt_client = mqtt.Client(client_id=self.mqtt_client_id, protocol=mqtt.MQTTv5)
+            if self.hive_mq:
+                self.mqtt_client.username_pw_set(self.mqtt_username, self.mqtt_password)
+                self.mqtt_client.tls_set()  # Enable TLS for HiveMQ Cloud!!!!
+            else:
+                self.mqtt_client.username_pw_set(self.mqtt_username.decode(), self.mqtt_password.decode())
+            print(f"Initializing MQTT client...")
+        except ConnectionError as e:
+            print(f"ERROR: Unable to connect MQTT, reason: {e}")
 
         # Connect MQTT callbacks
         self.mqtt_client.on_connect = self.on_connect
@@ -82,7 +92,7 @@ class MQTTSubscriber:
             # Subscribe to all sensor topics
             for topic in self.topics:
                 client.subscribe(topic, qos=1)  # deliver message least once
-                print(f"Subscribed to {topic}")
+                print(f"Subscribed to topic: {topic}")
             print(100 * "-")
         else:
             print(f"Failed to connect to MQTT broker with code {rc}")
@@ -125,7 +135,7 @@ class MQTTSubscriber:
 
             # Process the message based on the topic
 
-            if msg.topic == "sensors/heart_rate":
+            if msg.topic == "sensors/hr":
                 # Handle heart rate data
                 self.process_hr_data(payload.get("HR_data", {}), pico_id)
             elif msg.topic == "sensors/ecg":
@@ -284,8 +294,11 @@ class MQTTSubscriber:
     def start(self):
         """Start the MQTT subscriber"""
         try:
-            # Connect to MQTT broker
-            self.mqtt_client.connect(self.mqtt_broker, self.mqtt_port, 60)
+            if self.hive_mq:
+                # Connect to MQTT broker
+                self.mqtt_client.connect(self.mqtt_broker, self.mqtt_port, 60)
+            else:
+                self.mqtt_client.connect(self.mqtt_broker.decode(), self.mqtt_port, 60)
 
             # Start MQTT loop
             print("Starting MQTT subscriber...")
@@ -303,5 +316,5 @@ class MQTTSubscriber:
 
 
 if __name__ == "__main__":
-    subscriber = MQTTSubscriber()
+    subscriber = MQTTSubscriber(hive_mq=True)
     subscriber.start()
