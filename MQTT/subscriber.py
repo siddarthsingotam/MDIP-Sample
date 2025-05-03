@@ -68,15 +68,17 @@ class MQTTSubscriber:
             "sensors/gnss"
         ]
 
+        # Initialize MQTT client
         try:
-            # Initialize MQTT client
-            self.mqtt_client = mqtt.Client(client_id=self.mqtt_client_id, protocol=mqtt.MQTTv5)
             if self.hive_mq:
+                print(f"Initializing HiveMQ client...")
+                self.mqtt_client = mqtt.Client(client_id=self.mqtt_client_id, protocol=mqtt.MQTTv5)
                 self.mqtt_client.username_pw_set(self.mqtt_username, self.mqtt_password)
                 self.mqtt_client.tls_set()  # Enable TLS for HiveMQ Cloud!!!!
             else:
+                print(f"Initializing custom MQTT client...")
+                self.mqtt_client = mqtt.Client()
                 self.mqtt_client.username_pw_set(self.mqtt_username.decode(), self.mqtt_password.decode())
-            print(f"Initializing MQTT client...")
         except ConnectionError as e:
             print(f"ERROR: Unable to connect MQTT, reason: {e}")
 
@@ -287,8 +289,10 @@ class MQTTSubscriber:
             if self.hive_mq:
                 # Connect to MQTT broker
                 self.mqtt_client.connect(self.mqtt_broker, self.mqtt_port, 60)
+                print("Connected to HiveMQ client!")
             else:
-                self.mqtt_client.connect(self.mqtt_broker.decode(), self.mqtt_port, 60)
+                self.mqtt_client.connect(self.mqtt_broker, self.mqtt_port)
+                print("Connected to custom custom MQTT client!")
 
             # Start MQTT loop
             print("Starting MQTT subscriber...")
@@ -306,5 +310,5 @@ class MQTTSubscriber:
 
 
 if __name__ == "__main__":
-    subscriber = MQTTSubscriber(hive_mq=True)
+    subscriber = MQTTSubscriber(hive_mq=False)
     subscriber.start()
