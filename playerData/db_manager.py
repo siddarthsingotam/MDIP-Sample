@@ -1,11 +1,14 @@
+import os
 import sqlite3
+
 
 # A class to manage SQLite database operations for the Player class.
 class DatabaseManager:
 
     def __init__(self, db_name="player_data.db"):
-
-        self.db_name = db_name
+        # Ensure the database is always created/accessed in the playerData directory
+        player_data_dir = os.path.dirname(os.path.abspath(__file__))
+        self.db_name = os.path.join(player_data_dir, db_name)
         self.conn = None
         self.cursor = None
 
@@ -78,7 +81,8 @@ class DatabaseManager:
     def get_player_by_pico_id(self, pico_id):
         try:
             self.connect()
-            self.cursor.execute("SELECT player_id, name, pico_id, created_at FROM players WHERE pico_id = ?", (pico_id,))
+            self.cursor.execute("SELECT player_id, name, pico_id, created_at FROM players WHERE pico_id = ?",
+                                (pico_id,))
             player = self.cursor.fetchone()
 
             if player:
