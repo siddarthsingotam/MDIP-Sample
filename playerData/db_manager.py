@@ -58,7 +58,6 @@ class DatabaseManager:
 
     # Get player information by ID. Returns dictionary or None
     def get_player(self, player_id):
-
         try:
             self.connect()
             self.cursor.execute("SELECT player_id, name, pico_id, created_at FROM players WHERE player_id = ?", (player_id,))
@@ -70,6 +69,24 @@ class DatabaseManager:
                     "name": player["name"],
                     "pico_id": player["pico_id"],
                     "created_at": player["created_at"]
+                }
+            return None
+        finally:
+            self.close()
+
+    # Give player details by Pico ID
+    def get_player_by_pico_id(self, pico_id):
+        try:
+            self.connect()
+            self.cursor.execute("SELECT player_id, name, pico_id, created_at FROM players WHERE pico_id = ?", (pico_id,))
+            player = self.cursor.fetchone()
+
+            if player:
+                return {
+                    "player_id": player["player_id"],
+                    "name": player["name"],
+                    "pico_id": player["pico_id"],
+                    "created": player["created_at"]
                 }
             return None
         finally:
