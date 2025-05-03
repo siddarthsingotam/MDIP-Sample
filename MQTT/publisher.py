@@ -92,11 +92,10 @@ class SensorPublisher:
         self.mqtt_client_id = f"sensor-publisher-XXXX"
 
         # MQTT Topics
-        self.topic_hr = "sensors/heart_rate"
+        self.topic_hr = "sensors/hr"
         self.topic_ecg = "sensors/ecg"
         self.topic_imu = "sensors/imu"
         self.topic_gnss = "sensors/gnss"
-        self.topic_all = "sensors/all"
 
         # Initialize MQTT client
         self.mqtt_client = mqtt.Client(client_id=self.mqtt_client_id, protocol=mqtt.MQTTv5)
