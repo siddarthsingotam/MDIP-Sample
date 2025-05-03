@@ -15,15 +15,15 @@ load_dotenv(KEY_PATH)
 
 token = os.getenv("ALL_ACCESS_TOKEN")
 if not token:
-    raise ValueError("Environment variable ALL_ACCESS_TOKEN is not set")
+    raise ValueError("Environment variable ALL_ACCESS_TOKEN is not set.")
 
 # InfluxDB Configuration
 org = "MDIP-Sample"
 host = "https://eu-central-1-1.aws.cloud2.influxdata.com"
 database = "Full_Player_Data"
 
-# measurement = "player_metrics"
 
+# Setting up all the measurements for the data to be logged in influx
 measurement_hr = "measurement_heart_rate"
 measurement_ecg = "measurement_ecg"
 measurement_imu = "measurement_imu"
@@ -33,19 +33,13 @@ t1_payload_key = "publish_time_ms"
 # Initialize InfluxDB client
 influx_client = InfluxDBClient3(host=host, token=token, org=org)
 
-# if DB.get_player_by_pico_ID:
-
 # Setup Database Manager
 DB = DatabaseManager()
-print(DB.get_player_by_pico_id("qwert_1234"))
-
-
-# A static method to get the pico_id or None from the proposed payload format
-# def get_pico_id_from_payload(payload, types_of_data=("HR_data", "ECG_data", "IMU9_data", "GNSS_data")):
-#     for data_type in types_of_data:
-#         if data_type in payload:
-#             return payload[data_type].get("Pico_ID")
-#     return None
+try:
+    if DB:
+        print("Connected to local player DB in Database manager...")
+except NotImplementedError as e:
+    print(f"Error in DatabaseManager class {e}")
 
 
 class MQTTSubscriber:
@@ -57,19 +51,25 @@ class MQTTSubscriber:
         self.mqtt_password = "AtomBerg1"  # Update with your password
         self.mqtt_client_id = f"sensor-subscriber-XXXX"
 
+        # # Hive MQTT Configuration
+        # self.mqtt_broker = "d4e877f7c282469c87fe4307599ad40c.s1.eu.hivemq.cloud"
+        # self.mqtt_port = 8883  # TLS port
+        # self.mqtt_username = "AtomBerg1"
+        # self.mqtt_password = "AtomBerg1"
+        # self.mqtt_client_id = f"sensor-subscriber-XXXX"
+
         # MQTT Topics to subscribe to
         self.topics = [
             "sensors/heart_rate",
             "sensors/ecg",
             "sensors/imu",
-            "sensors/gnss",
-            "sensors/all"  # Special topic containing all sensor data
+            "sensors/gnss"
         ]
 
         # Initialize MQTT client
         self.mqtt_client = mqtt.Client(client_id=self.mqtt_client_id, protocol=mqtt.MQTTv5)
         self.mqtt_client.username_pw_set(self.mqtt_username, self.mqtt_password)
-        self.mqtt_client.tls_set()  # Enable TLS for HiveMQ Cloud
+        self.mqtt_client.tls_set()  # Enable TLS for HiveMQ Cloud!!!!
 
         # Connect MQTT callbacks
         self.mqtt_client.on_connect = self.on_connect
@@ -83,6 +83,7 @@ class MQTTSubscriber:
             for topic in self.topics:
                 client.subscribe(topic, qos=1)  # deliver message least once
                 print(f"Subscribed to {topic}")
+            print(100 * "-")
         else:
             print(f"Failed to connect to MQTT broker with code {rc}")
 
@@ -129,13 +130,13 @@ class MQTTSubscriber:
                 self.process_hr_data(payload.get("HR_data", {}), pico_id)
             elif msg.topic == "sensors/ecg":
                 # Handle ECG data
-                self.process_ecg_data(payload.get("ECG_data", {}))
+                self.process_ecg_data(payload.get("ECG_data", {}), pico_id)
             elif msg.topic == "sensors/imu":
                 # Handle IMU data
-                self.process_imu_data(payload.get("IMU9_data", {}))
+                self.process_imu_data(payload.get("IMU9_data", {}), pico_id)
             elif msg.topic == "sensors/gnss":
                 # Handle GNSS data
-                self.process_gnss_data(payload.get("GNSS_data", {}))
+                self.process_gnss_data(payload.get("GNSS_data", {}), pico_id)
 
         except Exception as e:
             print(f"Error processing message: {e}")
@@ -154,7 +155,7 @@ class MQTTSubscriber:
 
             # Get Pico Information from the DB
             player_data = DB.get_player_by_pico_id(pico_id=pico_id)
-            print(f"Player data {player_data}")
+            print(f"Player data: {player_data}")
 
             # Create point for InfluxDB
             point = (
@@ -177,7 +178,7 @@ class MQTTSubscriber:
         except Exception as e:
             print(f"Error processing HR data: {e}")
 
-    def process_ecg_data(self, ecg_data):
+    def process_ecg_data(self, ecg_data, pico_id):
         """Process and store ECG data in InfluxDB"""
         try:
             if not ecg_data:
@@ -189,10 +190,16 @@ class MQTTSubscriber:
             # Serialize samples as JSON
             serialized_samples = json.dumps({"data": ecg_data.get("Samples", [])})
 
+            # Get Pico Information from the DB
+            player_data = DB.get_player_by_pico_id(pico_id=pico_id)
+            print(f"Player data: {player_data}")
+
             # Create point for InfluxDB
             point = (
                 Point(measurement_ecg)
-                .tag("Movesense_series", ecg_data.get("Movesense_series", "unknown"))
+                .tag("Pico_ID", player_data["pico_id"])
+                .tag("Player_ID", player_data["player_id"])
+                .field("Movesense_series", ecg_data.get("Movesense_series", "unknown"))
                 .field("Samples", serialized_samples)
                 .field("Timestamp_UTC", ecg_data.get("Timestamp_UTC", int(time.time())))
                 .field("Timestamp_ms", ecg_data.get("Timestamp_ms", 0))
@@ -205,7 +212,7 @@ class MQTTSubscriber:
         except Exception as e:
             print(f"Error processing ECG data: {e}")
 
-    def process_imu_data(self, imu_data):
+    def process_imu_data(self, imu_data, pico_id):
         """Process and store IMU data in InfluxDB"""
         try:
             if not imu_data:
@@ -219,10 +226,16 @@ class MQTTSubscriber:
             serialized_gyro = json.dumps(imu_data.get("ArrayGyro", []))
             serialized_magn = json.dumps(imu_data.get("ArrayMagn", []))
 
+            # Get Pico Information from the DB
+            player_data = DB.get_player_by_pico_id(pico_id=pico_id)
+            print(f"Player data: {player_data}")
+
             # Create a single point for all the IMU data
             point = (
                 Point(measurement_imu)
-                .tag("Movesense_series", imu_data.get("Movesense_series", "unknown"))
+                .tag("Pico_ID", player_data["pico_id"])
+                .tag("Player_ID", player_data["player_id"])
+                .field("Movesense_series", imu_data.get("Movesense_series", "unknown"))
                 .field("ArrayAcc", serialized_acc)
                 .field("ArrayGyro", serialized_gyro)
                 .field("ArrayMagn", serialized_magn)
@@ -237,7 +250,7 @@ class MQTTSubscriber:
         except Exception as e:
             print(f"Error processing IMU data: {e}")
 
-    def process_gnss_data(self, gnss_data):
+    def process_gnss_data(self, gnss_data, pico_id):
         """Process and store GNSS data in InfluxDB"""
         try:
             if not gnss_data:
@@ -246,10 +259,16 @@ class MQTTSubscriber:
 
             print(f"Processing GNSS data: {gnss_data}")
 
+            # Get Pico Information from the DB
+            player_data = DB.get_player_by_pico_id(pico_id=pico_id)
+            print(f"Player data: {player_data}")
+
             # Create point for InfluxDB
             point = (
                 Point(measurement_gnss)
-                .tag("GNSS_sensor_ID", gnss_data.get("GNSS_sensor_ID", "unknown"))
+                .tag("Pico_ID", player_data["pico_id"])
+                .tag("Player_ID", player_data["player_id"])
+                .field("GNSS_sensor_ID", gnss_data.get("GNSS_sensor_ID", "unknown"))
                 .field("Latitude", gnss_data.get("Latitude", 0))
                 .field("Longitude", gnss_data.get("Longitude", 0))
                 .field("Date", gnss_data.get("Date", ""))
