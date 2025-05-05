@@ -1,4 +1,5 @@
 # mqtt_subscriber.py
+import ast
 import json
 import time
 import os
@@ -7,6 +8,49 @@ from dotenv import load_dotenv
 from influxdb_client_3 import InfluxDBClient3, Point
 
 from playerData.db_manager import DatabaseManager
+
+###
+import json
+import ast
+import re
+
+def python_dict_to_json(python_dict_string):
+    """
+    Converts a Python dictionary-like string to valid JSON
+
+    Args:
+        python_dict_string (str): String representation of a Python dictionary
+
+    Returns:
+        str: Valid JSON string with proper formatting
+    """
+    try:
+        # Method 1: Using ast.literal_eval to safely evaluate the string as a Python literal
+        try:
+            # Parse the string as a Python literal
+            python_dict = ast.literal_eval(python_dict_string)
+            # Convert to JSON string with indentation
+            return json.dumps(python_dict, indent=2)
+        except (SyntaxError, ValueError) as e:
+            # If ast.literal_eval fails, try the manual replacement method
+            pass
+
+        # Method 2: Manual replacement of Python syntax with JSON syntax
+        # Replace Python's True, False, None with JSON's true, false, null
+        json_string = python_dict_string.replace("True", "true").replace("False", "false").replace("None", "null")
+
+        # Replace single quotes with double quotes, but be careful with nested quotes
+        # This is a simplified approach and might not work for all cases
+        json_string = re.sub(r"'(.*?)'", r'"\1"', json_string)
+
+        # Parse the string to ensure it's valid JSON
+        json_obj = json.loads(json_string)
+
+        # Return the formatted JSON string
+        return json.dumps(json_obj, indent=2)
+
+    except Exception as e:
+        return f"Error converting to JSON: {str(e)}"
 
 # Load environment variables for InfluxDB credentials
 KEY_PATH = r"..\keys\keys.env"
@@ -27,7 +71,7 @@ measurement_hr = "measurement_heart_rate"
 measurement_ecg = "measurement_ecg"
 measurement_imu = "measurement_imu"
 measurement_gnss = "measurement_gnss"
-t1_payload_key = "publish_time_ms"
+t1_payload_key = "Timestamp_ms"
 
 # Initialize InfluxDB client
 influx_client = InfluxDBClient3(host=host, token=token, org=org)
@@ -103,8 +147,20 @@ class MQTTSubscriber:
         print(f"Received message on topic {msg.topic}")
         try:
             # Parse JSON payload
-            payload = json.loads(msg.payload.decode())
+            try:
+                # payload = json.loads(msg.payload.decode())
 
+                stringy = python_dict_to_json(msg.payload.decode())
+                payload = json.loads(stringy)
+
+                # Custom Payload test
+                # stringy = msg.payload.decode()
+                # payload = ast.literal_eval(stringy)
+
+                print(f"Payload: ", payload)
+                print(f"Payload type: ", type(payload))
+            except ValueError as e:
+                print("ERROR: VALUE ERROR: ", e)
 
             # Extract pico_id from payload
             pico_id = None
