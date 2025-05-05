@@ -1,6 +1,6 @@
 
 /keys/keys.env
-
+/telegraf/telegraf_keys.env
 # Byte-compiled / optimized / DLL files
 /__pycache__/
 *.py[cod]
@@ -175,3 +175,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+/telegraf/telegraf_keys.env
