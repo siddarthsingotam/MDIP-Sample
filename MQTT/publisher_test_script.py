@@ -58,7 +58,7 @@ SAMPLE_DATA = {
     },
     "sensors/gnss": {
         'Pico_ID': PICO_ID,
-        'GNSS_sensor_ID': 'device123',
+        'GNSS_ID': 'device123',
         'Date': datetime.now().isoformat(),
         'Latitude': 37.7749 + random.uniform(-0.01, 0.01),
         'Longitude': -122.4194 + random.uniform(-0.01, 0.01)

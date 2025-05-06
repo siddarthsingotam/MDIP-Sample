@@ -158,8 +158,8 @@ class MQTTSubscriber:
                 # payload = ast.literal_eval(stringy)
 
                 # 3rd implementation
-                # print(f"Payload: ", payload)
-                # print(f"Payload type: ", type(payload))
+                print(f"Payload: ", payload)
+                print(f"Payload type: ", type(payload))
             except ValueError as e:
                 print("ERROR: VALUE ERROR: ", e)
 
@@ -327,7 +327,7 @@ class MQTTSubscriber:
                 Point(measurement_gnss)
                 .tag("Pico_ID", player_data["pico_id"])
                 .tag("Player_ID", player_data["player_id"])
-                .field("GNSS_sensor_ID", gnss_data.get("GNSS_sensor_ID", "unknown"))
+                .field("GNSS_sensor_ID", gnss_data.get("GNSS_ID", "unknown"))
                 .field("Latitude", gnss_data.get("Latitude", 0))
                 .field("Longitude", gnss_data.get("Longitude", 0))
                 .field("Date", gnss_data.get("Date", ""))
