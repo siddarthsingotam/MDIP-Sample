@@ -8,11 +8,12 @@ if __name__ == "__main__":
     db_manager = DatabaseManager()
 
     # Get Pico_ID from hr_data in MQTT.publisher file
-    data = hr_data()
-    pico_id = data["HR_data"]["Pico_ID"]
+    # data = hr_data()
+    # pico_id = data["HR_data"]["Pico_ID"]
+    pico_id = "e66130100f8c9928"
 
     # players.name instead of string name when names are coming from the frontend
-    player = Player("Merlin", pico_id, db_manager)
+    player = Player("Nolan", pico_id, db_manager)
 
 
     # Load player from database

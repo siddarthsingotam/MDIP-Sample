@@ -157,8 +157,9 @@ class MQTTSubscriber:
                 # stringy = msg.payload.decode()
                 # payload = ast.literal_eval(stringy)
 
-                print(f"Payload: ", payload)
-                print(f"Payload type: ", type(payload))
+                # 3rd implementation
+                # print(f"Payload: ", payload)
+                # print(f"Payload type: ", type(payload))
             except ValueError as e:
                 print("ERROR: VALUE ERROR: ", e)
 
@@ -179,7 +180,7 @@ class MQTTSubscriber:
                 t2 = time.time_ns() // 1_000_000
                 # Now calculate latency
                 latency = t2 - t1
-                print(f"Latency for Pico: {pico_id}, on topic {msg.topic}: {latency} ms")
+                # print(f"Latency for Pico: {pico_id}, on topic {msg.topic}: {latency} ms")
             except NotImplementedError:
                 pass
 

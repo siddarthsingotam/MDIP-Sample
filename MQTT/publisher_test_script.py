@@ -21,7 +21,7 @@ TOPICS = [
     "sensors/ecg"
 ]
 
-PICO_ID = "qwert_1234"
+PICO_ID = "e66130100f8c9928"
 
 # Sample data for publishing
 SAMPLE_DATA = {
