@@ -1,4 +1,4 @@
-from db_manager import DatabaseManager
+from db_manager_pg import DatabaseManager
 from player import Player
 from MQTT.publisher import hr_data
 
@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     # Get Pico_ID from hr_data in MQTT.publisher file
     data = hr_data()
-    pico_id = data["HR_data"]["Pico_ID"]
+    pico_id = data["Pico_ID"]
 
     # players.name instead of string name when names are coming from the frontend
     player = Player("Merlin", pico_id, db_manager)

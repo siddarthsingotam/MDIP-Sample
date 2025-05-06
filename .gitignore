@@ -1,5 +1,6 @@
 
 /keys/keys.env
+/telegraf/telegraf_key.env
 
 # Byte-compiled / optimized / DLL files
 /__pycache__/

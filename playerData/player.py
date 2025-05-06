@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from db_manager import DatabaseManager
+from db_manager_pg import DatabaseManager
 
 class Player:
 
@@ -51,7 +51,11 @@ class Player:
         player.player_id = player_data["player_id"]
         player.name = player_data["name"]
         player.pico_id = player_data["pico_id"]
-        player.created_at = datetime.fromisoformat(player_data["created_at"])
+        created_at = player_data["created_at"] # Ensure datetime is parsed correctly only if it's a string
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(created_at)
+        player.created_at = created_at
+
         player.db_manager = db
 
         print(f"Player {player.name} (ID: {player.player_id}) loaded from database")

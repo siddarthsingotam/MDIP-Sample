@@ -12,7 +12,8 @@ from playerData.db_manager import DatabaseManager
 KEY_PATH = r"..\keys\keys.env"
 load_dotenv(KEY_PATH)
 
-token = os.getenv("ALL_ACCESS_TOKEN")
+#token = os.getenv("ALL_ACCESS_TOKEN")
+token = "ZszZ4Lyn1uYBdOelwshQu9eR2c81M71AuBo1dtakyrcNoVqv32p6Cxjji2BCOa8HKwZ7nxkxTwLspKaNxeDF_Q=="
 if not token:
     raise ValueError("Environment variable ALL_ACCESS_TOKEN is not set.")
 
